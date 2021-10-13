@@ -18,7 +18,7 @@ namespace Symphonia2
     {
         bool isPlayingSong;
         Label songLab;
-        bool isClean = true;
+        
         bool onLoop;
         int prevX = 0;
         int prevY = 100;
@@ -174,6 +174,9 @@ namespace Symphonia2
                     songLab.Location = new Point(prevX + 10, prevY + 20);
                     songLab.Click += (o, e2) =>
                     {
+                        button2.BackColor = Color.White;
+                        UnLoopAudioEvent?.Invoke(this, new EventArgs() { });
+                        onLoop = false;
                         StopEvent?.Invoke(this, new EventArgs() { });
                         DelUselessAudioEvent?.Invoke(this, new EventArgs() { });
 
@@ -217,10 +220,36 @@ namespace Symphonia2
                         {
                             Player.settings.setMode("loop", true);
                             onLoop = true;
+                            drpc.client.SetPresence(new RichPresence()
+                            {
+                                Details = "Listening to \"" + songFixd + "\"",
+                                State = "Listening (on loop)...",
+                                Assets = new Assets()
+                                {
+                                    LargeImageKey = "symphony",
+                                    LargeImageText = "Symphonia",
+                                    SmallImageKey = "symphony",
+                                    SmallImageText = "Build " + constants.build
+                                }
+                            });
+
                         };
                         UnLoopAudioEvent += (oe, e4) =>
                         {
+                            onLoop = false;
                             Player.settings.setMode("loop", false);
+                            drpc.client.SetPresence(new RichPresence()
+                            {
+                                Details = "Listening to \"" + songFixd + "\"",
+                                State = "Listening...",
+                                Assets = new Assets()
+                                {
+                                    LargeImageKey = "symphony",
+                                    LargeImageText = "Symphonia",
+                                    SmallImageKey = "symphony",
+                                    SmallImageText = "Build " + constants.build
+                                }
+                            });
                         };
 
 
