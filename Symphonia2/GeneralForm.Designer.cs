@@ -1,7 +1,7 @@
 ﻿
 namespace Symphonia2
 {
-    partial class Form1
+    partial class GeneralForm
     {
         /// <summary>
         /// Required designer variable.

@@ -13,8 +13,9 @@ using DiscordRPC;
 
 namespace Symphonia2
 {
+    
 
-    public partial class Form1 : Form
+    public partial class GeneralForm : Form
     {
         bool isPlayingSong;
         Label songLab;
@@ -32,7 +33,7 @@ namespace Symphonia2
         public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern bool ReleaseCapture();
-        public Form1()
+        public GeneralForm()
         {
             InitializeComponent();
         }
@@ -44,7 +45,7 @@ namespace Symphonia2
             flowLayoutPanel1.AutoScroll = true;
             //settingsBtn.Text = "\u2699";
             constants.initVersion();
-            label2.Text += " build " + constants.build;
+            label2.Text += " (build " + constants.build + ")";
             drpc.Init();
         }
 
@@ -115,6 +116,9 @@ namespace Symphonia2
 
         public delegate void DelUselessAudioHandler(object sender, EventArgs args);
         public event DelUselessAudioHandler DelUselessAudioEvent;
+
+        public event EventHandler<ChangeVolAddEventArgs> ChangeVolAddEvent;
+        
         private void OpenFolder_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog folderDlg = new FolderBrowserDialog();
@@ -297,6 +301,10 @@ namespace Symphonia2
                     {
 
                     };
+                    ChangeVolAddEvent += (oe, e69) =>
+                    {
+
+                    };
 
                     labels.Add(songLab);
                     flowLayoutPanel1.Controls.Add(songLab);
@@ -417,5 +425,13 @@ namespace Symphonia2
                 SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
             }
         }
+    }
+    public class ChangeVolAddEventArgs : EventArgs
+    {
+        public ChangeVolAddEventArgs(int plusVol)
+        {
+            this.PlusVolNew = plusVol;
+        }
+        public int PlusVolNew { get; private set; }
     }
 }
