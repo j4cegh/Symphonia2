@@ -303,7 +303,7 @@ namespace Symphonia2
                     };
                     ChangeVolAddEvent += (oe, e69) =>
                     {
-
+                        Player.settings.volume += e69.PlusVolNew;
                     };
 
                     labels.Add(songLab);
@@ -325,6 +325,10 @@ namespace Symphonia2
             if ((WMPLib.WMPPlayState)NewState == WMPLib.WMPPlayState.wmppsStopped)
             {
                 hasEnded = true;
+            }
+            else if ((WMPPlayState)NewState == WMPPlayState.wmppsMediaEnded && !onLoop)
+            {
+                playingSong.Text = "";
             }
 
         }
@@ -424,6 +428,11 @@ namespace Symphonia2
                 ReleaseCapture();
                 SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
             }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            ChangeVolAddEvent?.Invoke(this, new ChangeVolAddEventArgs(5) { });
         }
     }
     public class ChangeVolAddEventArgs : EventArgs
