@@ -9,6 +9,7 @@ fr I tried but no logic
 * stop button
 * looping
 * Discord RPC
+* support for .wav and .mp3 (COULD be more, I do not know WMPLib's limitations, but my app supports those 2.)
 
 # but you used to hide every code you make why you open source now
 because free code = good code (not that I expect anyone to use it)
