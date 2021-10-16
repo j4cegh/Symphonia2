@@ -123,6 +123,7 @@ namespace Symphonia2
             this.stopButt.TabIndex = 3;
             this.stopButt.Text = "STOP";
             this.stopButt.UseVisualStyleBackColor = true;
+            this.stopButt.Click += new System.EventHandler(this.stopButt_Click_1);
             // 
             // panel3
             // 

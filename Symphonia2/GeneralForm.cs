@@ -144,9 +144,20 @@ namespace Symphonia2
 
 
                 string root = folderDlg.SelectedPath;
+
+
                 List<string> files = new List<string>();
 
                 List<string> filesinDir = Directory.GetFiles(root).ToList();
+
+                foreach (string possSong in filesinDir.ToList())
+                {
+                    filesinDir.Remove(possSong);
+                }
+                foreach(string b in Directory.GetFiles(root).ToList())
+                {
+                    filesinDir.Add(b);
+                }
                 foreach (string i in filesinDir.ToList())
                 {
                     if (!i.EndsWith(".mp3") && !i.EndsWith(".wav"))
@@ -155,7 +166,7 @@ namespace Symphonia2
                     }
                 }
 
-                foreach (string possSong in filesinDir)
+                foreach (string possSong in filesinDir.ToList())
                 {
                     var filename = Path.GetFileName(possSong);
 
@@ -168,12 +179,49 @@ namespace Symphonia2
 
                     }
                 }
+               
 
                 WindowsMediaPlayer Player = new WindowsMediaPlayer();
                 WindowsMediaPlayer Playernew;
-                IWMPPlaylist playlist = Player.playlistCollection.newPlaylist(new DirectoryInfo(folderDlg.SelectedPath).Name);
-                IWMPMedia media;
                 
+                button5.Enabled = true;
+                button5.Click += (oe, eo) =>
+                {
+                    
+                    IWMPPlaylist playlist = Player.playlistCollection.newPlaylist(new DirectoryInfo(folderDlg.SelectedPath).Name);
+                    IWMPMedia media;
+                    
+                    foreach (var song in files.Select((value, index) => new { value, index }))
+                    {
+                        media = Player.newMedia(filesinDir[song.index]);
+                        playlist.appendItem(media);
+                    }
+                    Player.currentPlaylist = playlist;
+                    Player.controls.play();
+                    
+                    string songName = Path.GetFileNameWithoutExtension(Player.currentMedia.sourceURL);
+                    playingSong.Text = songName;                
+                    threadingRPC.SetRPC(drpc, "Listening to \"" + songName + "\"", "Listening" + " (playlist" + (onLoop ? ", on loop)" : ")") + "...", constants);
+                    StopEvent += (o, e4) =>
+                    {
+                        Player.controls.stop();
+                        threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
+                    };
+                    
+                    Player.CurrentItemChange += (NewItem) =>
+                    {
+                        songName = Path.GetFileNameWithoutExtension(Player.currentMedia.sourceURL);
+                        threadingRPC.SetRPC(drpc, "Listening to \"" + songName + "\"", "Listening" + " (playlist" + (onLoop ? ", on loop)" : ")") + "...", constants);
+                        playingSong.Text = songName;
+                    };
+                    LoopAudioEvent += (oeae, e4) =>
+                    {
+                        Player.settings.setMode("loop", true);
+                        onLoop = true;
+                        threadingRPC.SetRPC(drpc, "Listening to \"" + songName + "\"", "Listening (on loop)...", constants);
+                    };
+
+                };
                 foreach (var song in files.Select((value, index) => new { value, index }))
                 {
                     
@@ -185,35 +233,32 @@ namespace Symphonia2
                     Label songLab = new Label();
                     songLab.Padding = new Padding(6);
                     songLab.AutoSize = true;
-                    // playlist
-                    media = Player.newMedia(filesinDir[song.index]);
-                    playlist.appendItem(media);
-                    button5.Enabled = true;
-                    button5.Click += (oe, eo) => 
+                    
+                    StopEvent += (o, e4) =>
                     {
-                        Player.currentPlaylist = playlist;
-                        Player.controls.play();
+                        Player.controls.stop();
+                        threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
                     };
                     songLab.Location = new Point(prevX + 10, prevY + 20);
                     songLab.Click += (o, e2) =>
                     {
                         button2.BackColor = Color.White;
-                        UnLoopAudioEvent?.Invoke(this, new EventArgs() { });
                         onLoop = false;
-                        StopEvent?.Invoke(this, new EventArgs() { });
-                        DelUselessAudioEvent?.Invoke(this, new EventArgs() { });
+
 
                         hasEnded = false;
                         playingSong.Text = songFixd;
+                       
                         Player.PlayStateChange += (NewState) =>
                         {
+                            
                             if ((WMPLib.WMPPlayState)NewState == WMPLib.WMPPlayState.wmppsStopped)
                             {
                                 hasEnded = true;
                             }
                             else if ((WMPPlayState)NewState == WMPPlayState.wmppsMediaEnded && !onLoop && isPlaylist)
                             {
-                                
+                                //threadingRPC.SetRPC(drpc, "Listening to \"" + songFixd + "\"", "Listening (on loop)...", constants);
                             }
                             else if ((WMPPlayState)NewState == WMPPlayState.wmppsMediaEnded && !onLoop && !isPlaylist)
                             {
@@ -222,6 +267,7 @@ namespace Symphonia2
                                 StopEvent?.Invoke(this, new EventArgs() { });
 
                             }
+                            
 
                         };
 
@@ -229,12 +275,7 @@ namespace Symphonia2
                         Player.controls.play();
 
                         threadingRPC.SetRPC(drpc, "Listening to \"" + songFixd + "\"", "Listening...", constants);
-                        stopButt.Click += (oe, ea) =>
-                        {
-                            Player.controls.stop();
-                            playingSong.Text = "";
-                            threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
-                        };
+                        
                         LoopAudioEvent += (oe, e4) =>
                         {
                             Player.settings.setMode("loop", true);
@@ -263,12 +304,8 @@ namespace Symphonia2
                         Cursor = Cursors.Default;
                         songLab.ForeColor = Color.Black;
                     };
-                    StopEvent += (o, e4) =>
-                    {
-                        Player.controls.stop();
-                        threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some tunes?", constants);
-                    };
-
+                    
+/*
                     ResumeAudioEvent += (oe, e4) =>
                     {
                         Player.controls.play();
@@ -286,6 +323,7 @@ namespace Symphonia2
                     {
                         
                     };
+*/
 
                     labels.Add(songLab);
                     flowLayoutPanel1.Controls.Add(songLab);
@@ -444,6 +482,11 @@ namespace Symphonia2
         private void button5_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void stopButt_Click_1(object sender, EventArgs e)
+        {
+            StopEvent?.Invoke(this, new EventArgs() { });
         }
     }
     public class ChangeVolAddEventArgs : EventArgs
