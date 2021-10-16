@@ -19,11 +19,13 @@ namespace Symphonia2
     public partial class GeneralForm : Form
     {
         bool isPlayingSong;
+        bool isPlaylist;
         Label songLab;
         ThreadingRPC threadingRPC = new ThreadingRPC();
         bool onLoop;
         int prevX = 0;
         int prevY = 100;
+        int lastSongIndex = 0;
         [DllImport("winmm.dll")]
         public static extern int waveOutSetVolume(long uDeviceID, uint dwVolume);
         public const int WM_NCLBUTTONDOWN = 0xA1;
@@ -31,7 +33,7 @@ namespace Symphonia2
         DiscordRPC drpc = new DiscordRPC();
         Constants constants = new Constants();
         List<Label> labels = new List<Label>();
-
+        
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
@@ -166,10 +168,13 @@ namespace Symphonia2
                     }
                 }
 
-
+                WindowsMediaPlayer Player = new WindowsMediaPlayer();
+                WindowsMediaPlayer Playernew;
+                IWMPPlaylist playlist = Player.playlistCollection.newPlaylist(new DirectoryInfo(folderDlg.SelectedPath).Name);
+                IWMPMedia media;
                 foreach (var song in files.Select((value, index) => new { value, index }))
                 {
-                    WindowsMediaPlayer Player = new WindowsMediaPlayer();
+
 
 
                     int fileExtPos = song.value.LastIndexOf(".");
@@ -177,7 +182,9 @@ namespace Symphonia2
                     Label songLab = new Label();
                     songLab.Padding = new Padding(6);
                     songLab.AutoSize = true;
-
+                    // playlist
+                    media = Player.newMedia(filesinDir[song.index]);
+                    playlist.appendItem(media);
 
                     songLab.Location = new Point(prevX + 10, prevY + 20);
                     songLab.Click += (o, e2) =>
@@ -190,7 +197,74 @@ namespace Symphonia2
 
                         hasEnded = false;
                         playingSong.Text = songFixd;
-                        Player.PlayStateChange += Player_PlayStateChange;
+                        Player.PlayStateChange += (NewState) =>
+                        {
+                            if ((WMPLib.WMPPlayState)NewState == WMPLib.WMPPlayState.wmppsStopped)
+                            {
+                                hasEnded = true;
+                            }
+                            else if ((WMPPlayState)NewState == WMPPlayState.wmppsMediaEnded && !onLoop && isPlaylist)
+                            {
+                                playingSong.Text = "";
+                                
+                                try
+                                {
+                                    Playernew = new WindowsMediaPlayer();
+                                    if (lastSongIndex == 0)
+                                    {
+                                        lastSongIndex = song.index;
+                                    }
+                                    else
+                                    {
+                                        lastSongIndex += 1;
+                                    }
+                                    StopEvent?.Invoke(this, new EventArgs() { });
+                                    string switchSongFileName = Path.GetFileName(filesinDir[lastSongIndex]);
+                                    int switchSongExtIndex = switchSongFileName.LastIndexOf(".");
+                                    var switchSongFnNoExt = switchSongFileName.Substring(0, switchSongExtIndex);
+                                    threadingRPC.SetRPC(drpc, "Listening to \"" + switchSongFnNoExt + "\"", "Listening...", constants);
+                                    
+                                    Playernew.URL = filesinDir[lastSongIndex];
+                                    Playernew.controls.play();
+                                    StopEvent += (oee, e4) =>
+                                    {
+                                        Playernew.controls.stop();
+                                    };
+                                    LoopAudioEvent += (oe, e4) =>
+                                    {
+                                        Playernew.settings.setMode("loop", true);
+                                        onLoop = true;
+                                        threadingRPC.SetRPC(drpc, "Listening to \"" + switchSongFnNoExt + "\"", "Listening (on loop)...", constants);
+                                    };
+                                    UnLoopAudioEvent += (oe, e4) =>
+                                    {
+                                        onLoop = false;
+                                        Player.settings.setMode("loop", false);
+                                        threadingRPC.SetRPC(drpc, "Listening to \"" + switchSongFnNoExt + "\"", "Listening...", constants);
+                                    };
+                                    stopButt.Click += (oe, ea) =>
+                                    {
+                                        Playernew.controls.stop();
+                                        playingSong.Text = "";
+                                        threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
+                                    };
+                                } catch(Exception ee)
+                                {
+
+                                    playingSong.Text = "";
+                                    WindowsMediaPlayer fromStartPlayer = new WindowsMediaPlayer();
+                                    StopEvent?.Invoke(this, new EventArgs() { });
+
+                                }
+                            }
+                            else if ((WMPPlayState)NewState == WMPPlayState.wmppsMediaEnded && !onLoop && !isPlaylist)
+                            {
+                                playingSong.Text = "";
+                                threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
+                                StopEvent?.Invoke(this, new EventArgs() { });
+                            }
+
+                        };
 
                         Player.URL = filesinDir[song.index];
                         Player.controls.play();
@@ -277,7 +351,8 @@ namespace Symphonia2
             else if ((WMPPlayState)NewState == WMPPlayState.wmppsMediaEnded && !onLoop)
             {
                 playingSong.Text = "";
-                threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
+                //threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
+                
             }
 
         }
@@ -391,6 +466,19 @@ namespace Symphonia2
             {
                 ReleaseCapture();
                 SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+            }
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            CheckBox senderChk = (CheckBox)sender;
+            if(senderChk.Checked)
+            {
+                isPlaylist = true;
+            }
+            else
+            {
+                isPlaylist = false;
             }
         }
     }
