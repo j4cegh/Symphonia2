@@ -29,10 +29,12 @@ namespace Symphonia2
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GeneralForm));
             this.panel1 = new System.Windows.Forms.Panel();
             this.label2 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.button4 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.stopButt = new System.Windows.Forms.Button();
             this.panel3 = new System.Windows.Forms.Panel();
@@ -41,7 +43,6 @@ namespace Symphonia2
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.button3 = new System.Windows.Forms.Button();
-            this.button4 = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.SuspendLayout();
@@ -93,6 +94,16 @@ namespace Symphonia2
             this.panel2.TabIndex = 1;
             this.panel2.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panel2_MouseDown);
             // 
+            // button4
+            // 
+            this.button4.Location = new System.Drawing.Point(115, 61);
+            this.button4.Name = "button4";
+            this.button4.Size = new System.Drawing.Size(46, 31);
+            this.button4.TabIndex = 5;
+            this.button4.Text = "+";
+            this.button4.UseVisualStyleBackColor = true;
+            this.button4.Click += new System.EventHandler(this.button4_Click);
+            // 
             // button2
             // 
             this.button2.Location = new System.Drawing.Point(57, 61);
@@ -143,31 +154,21 @@ namespace Symphonia2
             // flowLayoutPanel1
             // 
             this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 25);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 79);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(343, 540);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(343, 486);
             this.flowLayoutPanel1.TabIndex = 2;
             this.flowLayoutPanel1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.flowLayoutPanel1_MouseDown_1);
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(236, 26);
+            this.button3.Location = new System.Drawing.Point(115, 26);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(110, 47);
             this.button3.TabIndex = 2;
             this.button3.Text = "OPEN";
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.OpenFolder_Click);
-            // 
-            // button4
-            // 
-            this.button4.Location = new System.Drawing.Point(115, 61);
-            this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(46, 31);
-            this.button4.TabIndex = 5;
-            this.button4.Text = "+";
-            this.button4.UseVisualStyleBackColor = true;
-            this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
             // GeneralForm
             // 
@@ -179,9 +180,11 @@ namespace Symphonia2
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "GeneralForm";
-            this.Text = "Form1";
+            this.Text = "Symphonia";
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.GeneralForm_MouseDown);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);

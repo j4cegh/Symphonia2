@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using WMPLib;
 using DiscordRPC;
+using System.Runtime.InteropServices;
 
 namespace Symphonia2
 {
@@ -19,15 +20,18 @@ namespace Symphonia2
     {
         bool isPlayingSong;
         Label songLab;
-        
+        ThreadingRPC threadingRPC = new ThreadingRPC();
         bool onLoop;
         int prevX = 0;
         int prevY = 100;
+        [DllImport("winmm.dll")]
+        public static extern int waveOutSetVolume(long uDeviceID, uint dwVolume);
         public const int WM_NCLBUTTONDOWN = 0xA1;
         public const int HT_CAPTION = 0x2;
         DiscordRPC drpc = new DiscordRPC();
         Constants constants = new Constants();
         List<Label> labels = new List<Label>();
+
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
@@ -165,7 +169,7 @@ namespace Symphonia2
 
                 foreach (var song in files.Select((value, index) => new { value, index }))
                 {
-                    WMPLib.WindowsMediaPlayer Player = new WMPLib.WindowsMediaPlayer();
+                    WindowsMediaPlayer Player = new WindowsMediaPlayer();
 
 
                     int fileExtPos = song.value.LastIndexOf(".");
@@ -191,69 +195,24 @@ namespace Symphonia2
                         Player.URL = filesinDir[song.index];
                         Player.controls.play();
 
-                        drpc.client.SetPresence(new RichPresence()
-                        {
-                            Details = "Listening to \"" + songFixd + "\"",
-                            State = "Listening...",
-                            Assets = new Assets()
-                            {
-                                LargeImageKey = "symphony",
-                                LargeImageText = "Symphonia",
-                                SmallImageKey = "symphony",
-                                SmallImageText = "Build " + constants.build
-                            }
-                        });
+                        threadingRPC.SetRPC(drpc, "Listening to \"" + songFixd + "\"", "Listening...", constants);
                         stopButt.Click += (oe, ea) =>
                         {
                             Player.controls.stop();
                             playingSong.Text = "";
-                            drpc.client.SetPresence(new RichPresence()
-                            {
-                                Details = "Nothing is playing.",
-                                State = "About to play some more tunes?",
-                                Assets = new Assets()
-                                {
-                                    LargeImageKey = "symphony",
-                                    LargeImageText = "Symphonia",
-                                    SmallImageKey = "symphony",
-                                    SmallImageText = "Build " + constants.build
-                                }
-                            });
+                            threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
                         };
                         LoopAudioEvent += (oe, e4) =>
                         {
                             Player.settings.setMode("loop", true);
                             onLoop = true;
-                            drpc.client.SetPresence(new RichPresence()
-                            {
-                                Details = "Listening to \"" + songFixd + "\"",
-                                State = "Listening (on loop)...",
-                                Assets = new Assets()
-                                {
-                                    LargeImageKey = "symphony",
-                                    LargeImageText = "Symphonia",
-                                    SmallImageKey = "symphony",
-                                    SmallImageText = "Build " + constants.build
-                                }
-                            });
-
+                            threadingRPC.SetRPC(drpc, "Listening to \"" + songFixd + "\"", "Listening (on loop)...", constants);
                         };
                         UnLoopAudioEvent += (oe, e4) =>
                         {
                             onLoop = false;
                             Player.settings.setMode("loop", false);
-                            drpc.client.SetPresence(new RichPresence()
-                            {
-                                Details = "Listening to \"" + songFixd + "\"",
-                                State = "Listening...",
-                                Assets = new Assets()
-                                {
-                                    LargeImageKey = "symphony",
-                                    LargeImageText = "Symphonia",
-                                    SmallImageKey = "symphony",
-                                    SmallImageText = "Build " + constants.build
-                                }
-                            });
+                            threadingRPC.SetRPC(drpc, "Listening to \"" + songFixd + "\"", "Listening...", constants);
                         };
 
 
@@ -274,18 +233,7 @@ namespace Symphonia2
                     StopEvent += (o, e4) =>
                     {
                         Player.controls.stop();
-                        drpc.client.SetPresence(new RichPresence()
-                        {
-                            Details = "Nothing is playing.",
-                            State = "About to play some tunes?",
-                            Assets = new Assets()
-                            {
-                                LargeImageKey = "symphony",
-                                LargeImageText = "Symphonia",
-                                SmallImageKey = "symphony",
-                                SmallImageText = "Build " + constants.build
-                            }
-                        });
+                        threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some tunes?", constants);
                     };
 
                     ResumeAudioEvent += (oe, e4) =>
@@ -303,7 +251,7 @@ namespace Symphonia2
                     };
                     ChangeVolAddEvent += (oe, e69) =>
                     {
-                        Player.settings.volume += e69.PlusVolNew;
+                        
                     };
 
                     labels.Add(songLab);
@@ -329,6 +277,7 @@ namespace Symphonia2
             else if ((WMPPlayState)NewState == WMPPlayState.wmppsMediaEnded && !onLoop)
             {
                 playingSong.Text = "";
+                threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
             }
 
         }
@@ -432,7 +381,17 @@ namespace Symphonia2
 
         private void button4_Click(object sender, EventArgs e)
         {
-            ChangeVolAddEvent?.Invoke(this, new ChangeVolAddEventArgs(5) { });
+            ChangeVolAddEvent?.Invoke(this, new ChangeVolAddEventArgs(100) { });
+            
+        }
+
+        private void GeneralForm_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                ReleaseCapture();
+                SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+            }
         }
     }
     public class ChangeVolAddEventArgs : EventArgs
