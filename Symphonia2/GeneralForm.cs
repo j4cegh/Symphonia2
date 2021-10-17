@@ -125,10 +125,19 @@ namespace Symphonia2
         public event DelUselessAudioHandler DelUselessAudioEvent;
 
         public event EventHandler<ChangeVolAddEventArgs> ChangeVolAddEvent;
-        
+        private static Random random = new Random();
+        public static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
         private void OpenFolder_Click(object sender, EventArgs e)
         {
+            
             FolderBrowserDialog folderDlg = new FolderBrowserDialog();
+            string root = folderDlg.SelectedPath;
+
             DialogResult result = folderDlg.ShowDialog();
             if (result == DialogResult.OK)
             {
@@ -140,24 +149,16 @@ namespace Symphonia2
                     flowLayoutPanel1.Controls.Remove(label);
                     labels.Remove(label);
                 }
+                
 
-
-
-                string root = folderDlg.SelectedPath;
+                
 
 
                 List<string> files = new List<string>();
 
-                List<string> filesinDir = Directory.GetFiles(root).ToList();
+                List<string> filesinDir = Directory.GetFiles(folderDlg.SelectedPath).ToList();
 
-                foreach (string possSong in filesinDir.ToList())
-                {
-                    filesinDir.Remove(possSong);
-                }
-                foreach(string b in Directory.GetFiles(root).ToList())
-                {
-                    filesinDir.Add(b);
-                }
+               
                 foreach (string i in filesinDir.ToList())
                 {
                     if (!i.EndsWith(".mp3") && !i.EndsWith(".wav"))
@@ -179,21 +180,24 @@ namespace Symphonia2
 
                     }
                 }
-               
 
-                WindowsMediaPlayer Player = new WindowsMediaPlayer();
-                WindowsMediaPlayer Playernew;
-                
+
+
+
                 button5.Enabled = true;
                 button5.Click += (oe, eo) =>
                 {
+                    WindowsMediaPlayer Player = new WindowsMediaPlayer();
+
+                   
+
                     
-                    IWMPPlaylist playlist = Player.playlistCollection.newPlaylist(new DirectoryInfo(folderDlg.SelectedPath).Name);
+                    IWMPPlaylist playlist = Player.playlistCollection.newPlaylist(new DirectoryInfo(folderDlg.SelectedPath).Name + RandomString(20));
                     IWMPMedia media;
-                    
-                    foreach (var song in files.Select((value, index) => new { value, index }))
+                    playlist.clear();
+                    foreach (var song in filesinDir)
                     {
-                        media = Player.newMedia(filesinDir[song.index]);
+                        media = Player.newMedia(song);
                         playlist.appendItem(media);
                     }
                     Player.currentPlaylist = playlist;
@@ -204,6 +208,7 @@ namespace Symphonia2
                     threadingRPC.SetRPC(drpc, "Listening to \"" + songName + "\"", "Listening" + " (playlist" + (onLoop ? ", on loop)" : ")") + "...", constants);
                     StopEvent += (o, e4) =>
                     {
+                        playingSong.Text = "";
                         Player.controls.stop();
                         threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
                     };
@@ -224,7 +229,8 @@ namespace Symphonia2
                 };
                 foreach (var song in files.Select((value, index) => new { value, index }))
                 {
-                    
+                    WindowsMediaPlayer Player = new WindowsMediaPlayer();
+
 
 
 
@@ -236,6 +242,7 @@ namespace Symphonia2
                     
                     StopEvent += (o, e4) =>
                     {
+                        playingSong.Text = "";
                         Player.controls.stop();
                         threadingRPC.SetRPC(drpc, "Nothing is playing.", "About to play some more tunes?", constants);
                     };
